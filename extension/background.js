@@ -67,15 +67,24 @@ async function syncNow() {
     addRules.push({
       id: nextRuleId++,
       priority: 1,
-      action: { type: "redirect", redirect: { extensionPath: "blocked.html" } },
+      // extensionPath must be absolute (leading "/") and the target must be
+      // listed in manifest web_accessible_resources.
+      action: { type: "redirect", redirect: { extensionPath: "/blocked.html" } },
       condition: { domains, urlFilter: "*" },
     });
     ruleMap[key] = addRules[addRules.length - 1].id;
   }
 
   if (removeRuleIds.length > 0 || addRules.length > 0) {
-    await chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds, addRules });
-    console.log(`[tomatto] v${version}: +${addRules.length} -${removeRuleIds.length} rules`);
+    try {
+      await chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds, addRules });
+      console.log(`[tomatto] v${version}: +${addRules.length} -${removeRuleIds.length} rules`);
+    } catch (err) {
+      // Don't persist etag/ruleMap for a snapshot we failed to apply — the
+      // next alarm will re-fetch and retry instead of silently diverging.
+      console.error("[tomatto] updateDynamicRules failed:", err.message);
+      return;
+    }
   }
 
   await chrome.storage.local.set({
