@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Tomatto",
+  "version": "1.0.0",
+  "description": "Blocks the domains pushed by the Tomatto Sync API (coursework demo of REST-to-REST + browser integration).",
+  "permissions": ["alarms", "storage", "declarativeNetRequest"],
+  "host_permissions": [
+    "http://localhost:3002/*",
+    "http://127.0.0.1:3002/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+}

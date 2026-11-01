@@ -1,0 +1,8 @@
+# Plain-pip alternative to uv (CI and README use uv; this is for anyone without it).
+fastapi>=0.115
+uvicorn[standard]>=0.30
+httpx>=0.27
+idna>=3.7
+pyyaml>=6.0
+pytest>=8.2
+pytest-asyncio>=0.24

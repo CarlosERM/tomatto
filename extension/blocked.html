@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Bloqueado — Tomatto</title>
+  <style>
+    body {
+      margin: 0; height: 100vh; display: flex; align-items: center; justify-content: center;
+      background: #1a120f; color: #f5e9e4; font-family: system-ui, sans-serif; text-align: center;
+    }
+    .card { max-width: 32rem; padding: 2rem; }
+    .tomato { font-size: 4.5rem; }
+    h1 { font-size: 1.6rem; margin: 0.75rem 0; }
+    p { color: #c9b3aa; line-height: 1.5; }
+    code { background: #2e211c; padding: 0.1rem 0.4rem; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="tomato">🍅</div>
+    <h1>Este site está bloqueado pelo Tomatto</h1>
+    <p>A lista de bloqueio vem da <code>Sync API</code> do projeto Tomatto e é atualizada a cada minuto.</p>
+    <p>Para liberar: <code>DELETE http://localhost:3001/rules/&lt;id&gt;</code></p>
+  </div>
+</body>
+</html>
