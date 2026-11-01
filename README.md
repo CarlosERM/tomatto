@@ -93,6 +93,7 @@ Observations that drove each v1 → v2 refinement are documented inside the prom
 - **P2:** *(v1 produced shallow single-service happy paths; naming both services per scenario forced real integration flows)*
 - **P3:** *(v1 stopped at HTTP-level 400s; enumerating cross-service failure classes unlocked outage/retry cases)*
 - **P4:** *(v1 gave boring domain lists; demanding JSON + expected normalized form made output directly executable — and surfaced a real normalization-equivalence bug: `example.com.` ≡ `example.com` → duplicate must 409)*
+- **Live finding (post-suite):** none of the four prompt types covered the *consumer-side* contract, and reality filled the gap: the extension installed zero rules because `declarativeNetRequest` rejects a relative `redirect.extensionPath` (`"blocked.html"` → *"specifies an incorrect value"*), and even absolute paths need `web_accessible_resources` before Chrome will navigate to them. A would-be **P5 prompt** ("generate contract checks between the Sync API response and the browser's declarativeNetRequest rule schema") is the lesson: GenAI tested every seam we described, but seams we didn't describe stay untested until probed — arguably the strongest argument for treating prompts as a *coverage plan*.
 
 ## Future work (out of exercise scope)
 
