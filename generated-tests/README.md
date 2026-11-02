@@ -25,6 +25,21 @@ Prompt version: v2 (prompts/p2-scenarios.md)
 <raw response pasted verbatim>
 ```
 
+## Transcripts on file
+
+All runs: **Qwen3.8 Flash Next** served locally by LM Studio, each in a fresh agent context with no access to this repository (the P1 runs were additionally allowed to read only `docs/openapi.yaml`, which is the spec they are supposed to be given). Date: 2026-11-02.
+
+| Run | Transcript | Verdict |
+|-----|-----------|---------|
+| P1 v1 | `p1-v1-qwen3.8-flash-next-20261102.md` | Runnable pytest + `jsonschema`, all endpoints, no invented ones; silent on stale-version/409, and `pytest.skip` would mask an unreachable Sync API |
+| P1 v2 | `p1-v2-qwen3.8-flash-next-20261102.md` | 19-row checklist incl. all four cross-service promises; exposed a contradiction inside my own prompt (rule 3 vs rule 4) and asserted an undocumented `409` |
+| P2 v1 | `p2-v1-qwen3.8-flash-next-20261102.md` | ~30 scenarios, broad but unanchored: invented auth, expiring blocks, delta sync, pagination, wildcards; never named the real mechanisms |
+| P2 v2 | `p2-v2-qwen3.8-flash-next-20261102.md` | 7 both-service scenarios with named seams, zero invention; S7 anticipated the stale-ETag bug we later hit for real |
+| P3 v1 | `p3-v1-qwen3.8-flash-next-20261102.md` | ~50 generic hardening cases (JWT, gzip bomb, IDOR); cross-service contract absent; only *advises* end-to-end testing |
+| P3 v2 | `p3-v2-qwen3.8-flash-next-20261102.md` | 14 concrete outage/injection rows with user-visible symptoms; slipped on the payload key (`domains` vs `sites`) |
+| P4 v1 | `p4-v1-qwen3.8-flash-next-20261102.md` | The predicted failure: 20 brand names, no edge inputs at all |
+| P4 v2 | `p4-v2-qwen3.8-flash-next-20261102.md` | Exact row counts, punycode verified against Python's `idna`, duplicate-normalization pair present |
+
 ## Transcript → test mapping
 
 | Prompt | Transcript here | Curated into |

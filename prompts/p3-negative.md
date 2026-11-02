@@ -12,7 +12,7 @@ indisponibilidade entre serviços, payloads malformados, inconsistência eventua
 Act as an adversarial QA engineer. Generate error test cases for a REST API that manages a list of blocked websites and syncs them to another API consumed by a browser extension.
 ```
 
-**Observed result:** produced only HTTP-level noise — bad JSON, missing fields, 404s on one service at a time. The *cross-service* failure modes (outage mid-write, stale consumer state, retry semantics) never appeared until the prompt named them as required dimensions.
+**Observed result (Qwen3.8 Flash Next, [`generated-tests/p3-v1-qwen3.8-flash-next-20261102.md`](../generated-tests/p3-v1-qwen3.8-flash-next-20261102.md)):** ~50 cases in 7 sections — and again *not* just HTTP noise: it had a "Sync Pipeline (the highest-risk surface)" section, homoglyph/RLO domains, `good.com@evil.xyz` authority smuggling and even an empty-list fail-open case. But the framing is generic API security, not this integration: JWT `alg:none`, multi-tenant cursor tampering, gzip bombs, Slowloris, IDOR on sequential IDs — none reachable in a two-service localhost demo — while the actual contract (`sync_status="pending"`, `/sync/retry` semantics, version monotonicity vs. 409) appears nowhere. Its own closing note is the tell: it *advises* testing "against a real extension build" instead of producing such cases.
 
 ## v2 (refined — use this one)
 
@@ -33,4 +33,6 @@ Hard requirements:
 4. No generic advice — only concrete executable steps.
 ```
 
-**Transcript:** save your raw LLM response as `generated-tests/p3-v2-<model>-<date>.md`.
+**Observed result (v2, Qwen3.8 Flash Next, [`generated-tests/p3-v2-qwen3.8-flash-next-20261102.md`](../generated-tests/p3-v2-qwen3.8-flash-next-20261102.md)):** 14 rows, all genuinely cross-service, each with executable steps and a *user-visible* symptom ("a domain the user explicitly deleted starts blocking again", "one unauthenticated curl wipes every user's blocklist"). Rows 1/2/4/5/6 became tests in `test_p3_negative.py`; row 9 (forged high version poisoning monotonicity) and row 14 (Sync restart serving an authoritative-looking empty list) are real design findings we documented rather than tested. One instructive slip: rows 6/7/9 write the snapshot key as `"domains"` instead of `sites` — scenario logic right, field names wrong, so generated cases still have to be checked against the spec before they can run.
+
+**Transcript:** saved as [`generated-tests/p3-v2-qwen3.8-flash-next-20261102.md`](../generated-tests/p3-v2-qwen3.8-flash-next-20261102.md).

@@ -12,7 +12,7 @@ Alimenta `tests/integration/data/blocklist_dataset.json` e `test_p4_test_data.py
 Generate a list of 20 realistic website domains I can use as test data for testing a website-blocking API.
 ```
 
-**Observed result:** 20 boring names (`facebook.com`, `youtube.com`...). Zero edge value — none of it would ever catch a normalization bug, and half were duplicates modulo case.
+**Observed result (Qwen3.8 Flash Next, [`generated-tests/p4-v1-qwen3.8-flash-next-20261102.md`](../generated-tests/p4-v1-qwen3.8-flash-next-20261102.md)):** exactly as feared — `facebook.com`, `youtube.com`, `twitter.com`… 20 real brand names, zero edge value. Not one row exercises normalization (no scheme, no port, no uppercase, no IDN, no credentials), so nothing in it could ever catch a parser bug; and half of them are only interesting as *brands*, not as inputs.
 
 ## v2 (refined — use this one)
 
@@ -36,4 +36,6 @@ Requirements:
 4. Reject rows: one per rejection rule listed above.
 ```
 
-**Transcript:** save your raw LLM response as `generated-tests/p4-v2-<model>-<date>.md`. Note: the two same-normalization inputs are intentional — the suite asserts the second is a legitimate 409 (normalization equivalence).
+**Observed result (v2, Qwen3.8 Flash Next, [`generated-tests/p4-v2-qwen3.8-flash-next-20261102.md`](../generated-tests/p4-v2-qwen3.8-flash-next-20261102.md)):** exactly 12 accept + 8 reject rows, all required families present, and the punycode is **correct** — verified against Python's `idna`: `café.com.br → xn--caf-dma.com.br`, `中国.com → xn--fiqs8s.com`, `xn--mnchen-3ya.de` passed through unchanged. The duplicate pair arrived as intended (`EXAMPLE.COM` and `example.com.` both normalize to `example.com`). One judgement call it made on its own: it accepts the IPv4 literal `192.0.2.1`, reasoning that only IPv6 is rejected — technically right per our rules, but a 4-label numeric "domain" deserves an explicit test rather than an inference.
+
+**Transcript:** saved as [`generated-tests/p4-v2-qwen3.8-flash-next-20261102.md`](../generated-tests/p4-v2-qwen3.8-flash-next-20261102.md). Note: the two same-normalization inputs are intentional — the suite asserts the second is a legitimate 409 (normalization equivalence).

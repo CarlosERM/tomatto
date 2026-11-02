@@ -14,7 +14,7 @@ You are a QA engineer. Here is the OpenAPI spec of two REST services (Tomatto Ma
 <PASTE docs/openapi.yaml HERE>
 ```
 
-**Observed result:** produced generic per-endpoint happy-path checks ("returns 200", "body is JSON"). It ignored the *relationship* between the two services (version propagation, ETag semantics) and invented endpoints that don't exist in some runs.
+**Observed result (Qwen3.8 Flash Next, [`generated-tests/p1-v1-qwen3.8-flash-next-20261102.md`](../generated-tests/p1-v1-qwen3.8-flash-next-20261102.md)):** far better than expected — it emitted *executable* pytest code that loads the spec, resolves `$ref`s and validates every documented response with `jsonschema`, covered all 7 endpoints without inventing any, and even derived cross-service pipeline tests from the spec's `info.description`. Two real gaps: nothing about stale-version rejection (the spec never documents a 409, so an unanchored prompt never asks for it), and when Sync was unreachable the generated code called `pytest.skip` — turning a broken integration into a silently green suite.
 
 ## v2 (refined — use this one)
 
@@ -40,4 +40,6 @@ Rules:
 </SPEC>
 ```
 
-**Transcript:** save your raw LLM response as `generated-tests/p1-v2-<model>-<date>.md` (see generated-tests/README.md).
+**Observed result (v2, Qwen3.8 Flash Next, [`generated-tests/p1-v2-qwen3.8-flash-next-20261102.md`](../generated-tests/p1-v2-qwen3.8-flash-next-20261102.md)):** 19 rows, one per promise, every endpoint covered, and the four cross-service rows landed (version `v2 = v1 + 1`, `304` with empty body, stale push → `409` leaving state unchanged, same-version replay idempotent). It also surfaced a flaw **in my prompt**: rule 4 forbids status codes absent from the spec, while rule 3 demands a stale-snapshot rejection row — and `docs/openapi.yaml` documents no `409` at all (FastAPI can't infer it). The model resolved the contradiction silently in favour of rule 3, producing a test for behaviour the API implements but never declares. Two lessons: conflicting constraints are resolved without asking, and the real bug is spec drift — `/internal/sync` should declare `409`.
+
+**Transcript:** saved as [`generated-tests/p1-v2-qwen3.8-flash-next-20261102.md`](../generated-tests/p1-v2-qwen3.8-flash-next-20261102.md).

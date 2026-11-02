@@ -12,7 +12,7 @@ Alimenta `tests/integration/test_p2_scenarios.py`.
 Generate integration test scenarios for a website-blocking system composed of a REST API that stores blocked domains and another REST API polled by a browser extension to get the block list.
 ```
 
-**Observed result:** shallow happy-path only ("add domain, appears in list"). No polling semantics, no persistence, nothing about *how* the two services stay consistent — exactly the part where integration bugs live.
+**Observed result (Qwen3.8 Flash Next, [`generated-tests/p2-v1-qwen3.8-flash-next-20261102.md`](../generated-tests/p2-v1-qwen3.8-flash-next-20261102.md)):** not shallow at all — ~30 scenarios across 8 areas, including ETag/304 polling and eventual consistency. The failure mode was **volume without anchoring**: it invented capabilities the system doesn't have (auth tokens and credential rotation, scheduled/expiring blocks, delta/delta-sync responses, pagination, wildcard `*.example.com` entries, a read replica) and never once named the mechanisms that actually hold the integration together — write-through push, monotonic version, `sync_status="pending"`, `/sync/retry`. Most of its output is untestable against this codebase.
 
 ## v2 (refined — use this one)
 
@@ -32,4 +32,6 @@ Write integration test SCENARIOS (not code) in Given/When/Then format. Requireme
 4. Number them S1..Sn and keep each under 6 lines.
 ```
 
-**Transcript:** save your raw LLM response as `generated-tests/p2-v2-<model>-<date>.md`.
+**Observed result (v2, Qwen3.8 Flash Next, [`generated-tests/p2-v2-qwen3.8-flash-next-20261102.md`](../generated-tests/p2-v2-qwen3.8-flash-next-20261102.md)):** 7 scenarios, every one touching both services and closing with the named seam, **zero invented capabilities**, using our vocabulary correctly (`sync_status="pending"`, `POST /sync/retry`, `W/"<version>"`). S5/S6/S7 map almost verbatim onto shipped tests. Best detail: S7 predicts that during an outage the consumer keeps receiving `304` against a stale version and must keep enforcing the old list — the exact integration-state bug we later hit for real in the extension's ETag fast-path.
+
+**Transcript:** saved as [`generated-tests/p2-v2-qwen3.8-flash-next-20261102.md`](../generated-tests/p2-v2-qwen3.8-flash-next-20261102.md).
