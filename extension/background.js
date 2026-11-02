@@ -6,7 +6,12 @@
 const SYNC_API = "http://localhost:3002"; // change here if the Sync API runs elsewhere
 const ALARM_NAME = "tomatto-poll";
 
-console.log("[tomatto] worker v4 loaded"); // version banner: distinguishes live code from stale console messages
+console.log("[tomatto] worker v5 loaded"); // version banner: distinguishes live code from stale console messages
+
+// Rule-schema version embedded in ruleMap keys. Bump when conditions change;
+// instances holding older keys force one full fetch (skipping the ETag) so the
+// diff can rebuild every rule — a 304 would otherwise skip migration forever.
+const RULE_SCHEMA = "v4";
 
 // Build the dNR condition for one site. Notes from the declarativeNetRequest docs:
 // - `domains` is deprecated (Chrome 101+) and matches the request INITIATOR, not
@@ -44,7 +49,12 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 async function syncNow() {
   const stored = await chrome.storage.local.get(["etag", "ruleMap", "nextRuleId"]);
 
-  const headers = stored.etag ? { "If-None-Match": stored.etag } : {};
+  // If our stored rules predate the current schema, skip the ETag so this poll
+  // returns a full snapshot and the diff below can rebuild them.
+  const storedKeys = Object.keys(stored.ruleMap ?? {});
+  const needsMigration = storedKeys.some((k) => !k.startsWith(`${RULE_SCHEMA}|`));
+
+  const headers = stored.etag && !needsMigration ? { "If-None-Match": stored.etag } : {};
   let response;
   try {
     response = await fetch(`${SYNC_API}/blocked`, { headers });
@@ -54,6 +64,7 @@ async function syncNow() {
   }
 
   if (response.status === 304) {
+    console.log("[tomatto] unchanged (304)"); // visible heartbeat: silence != failure
     return; // nothing changed — cheap poll
   }
   if (!response.ok) {
@@ -62,13 +73,11 @@ async function syncNow() {
   }
 
   const { version, sites } = await response.json();
-  const ruleMap = stored.ruleMap ?? {}; // key "v4|domain|subs" -> dNR rule id
+  const ruleMap = stored.ruleMap ?? {}; // key "<schema>|domain|subs" -> dNR rule id
   let nextRuleId = stored.nextRuleId ?? 1;
 
-  // The 'v4' prefix is a condition-schema version: when the rule schema
-  // changes, old keys no longer match and every rule is cleanly reinstalled.
   const desired = new Map(
-    (sites ?? []).map((s) => [`v4|${s.domain}|${s.include_subdomains ? 1 : 0}`, s])
+    (sites ?? []).map((s) => [`${RULE_SCHEMA}|${s.domain}|${s.include_subdomains ? 1 : 0}`, s])
   );
 
   // Remove rules that disappeared or changed their subdomain flag.
