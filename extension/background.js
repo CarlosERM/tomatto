@@ -6,6 +6,25 @@
 const SYNC_API = "http://localhost:3002"; // change here if the Sync API runs elsewhere
 const ALARM_NAME = "tomatto-poll";
 
+console.log("[tomatto] worker v3 loaded"); // version banner: distinguishes live code from stale console messages
+
+// Build the dNR condition for one site. Notes from the declarativeNetRequest docs:
+// - `domains` is deprecated (Chrome 101+) and matches the request INITIATOR, not
+//   the target URL — address-bar navigations would never match it. `requestDomains`
+//   matches the request URL's host and implicitly includes all sub-domains.
+// - If neither resourceTypes nor excludedResourceTypes is given, main_frame is
+//   EXCLUDED — top-level navigation must be listed explicitly to block visits.
+function ruleCondition(site) {
+  const base = { resourceTypes: ["main_frame", "sub_frame"] };
+  if (site.include_subdomains) {
+    return { ...base, requestDomains: [site.domain], urlFilter: "*" };
+  }
+  // Exact host only: anchor scheme + host boundary. regexFilter is matched
+  // against the punycode host, which our domains already are.
+  const escaped = site.domain.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return { ...base, regexFilter: `^https?://${escaped}([/:?#]|$)` };
+}
+
 chrome.runtime.onInstalled.addListener(() => {
   chrome.alarms.create(ALARM_NAME, { periodInMinutes: 1 });
   syncNow();
@@ -63,14 +82,13 @@ async function syncNow() {
   const addRules = [];
   for (const [key, site] of desired) {
     if (key in ruleMap) continue;
-    const domains = site.include_subdomains ? [site.domain, `*.${site.domain}`] : [site.domain];
     addRules.push({
       id: nextRuleId++,
       priority: 1,
       // extensionPath must be absolute (leading "/") and the target must be
       // listed in manifest web_accessible_resources.
       action: { type: "redirect", redirect: { extensionPath: "/blocked.html" } },
-      condition: { domains, urlFilter: "*" },
+      condition: ruleCondition(site),
     });
     ruleMap[key] = addRules[addRules.length - 1].id;
   }
