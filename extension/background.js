@@ -11,7 +11,7 @@
 const SYNC_API = "http://localhost:3002"; // change here if the Sync API runs elsewhere
 const ALARM_NAME = "tomatto-poll";
 
-console.log("[tomatto] worker v9 loaded");
+console.log("[tomatto] worker v10 loaded");
 
 // Debug aid for unpacked extensions (declarativeNetRequestFeedback permission):
 // logs EVERY request this extension's rules match. If a visit produces no

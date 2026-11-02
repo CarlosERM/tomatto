@@ -5,10 +5,7 @@
   "description": "Blocks the domains pushed by the Tomatto Sync API (coursework demo of REST-to-REST + browser integration).",
   "permissions": ["alarms", "storage", "declarativeNetRequest", "declarativeNetRequestFeedback"],
   "action": {},
-  "host_permissions": [
-    "http://localhost:3002/*",
-    "http://127.0.0.1:3002/*"
-  ],
+  "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "background.js"
   },
