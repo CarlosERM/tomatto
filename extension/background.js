@@ -6,7 +6,7 @@
 const SYNC_API = "http://localhost:3002"; // change here if the Sync API runs elsewhere
 const ALARM_NAME = "tomatto-poll";
 
-console.log("[tomatto] worker v5 loaded"); // version banner: distinguishes live code from stale console messages
+console.log("[tomatto] worker v6 loaded"); // version banner: distinguishes live code from stale console messages
 
 // Rule-schema version embedded in ruleMap keys. Bump when conditions change;
 // instances holding older keys force one full fetch (skipping the ETag) so the
@@ -32,12 +32,12 @@ function ruleCondition(site) {
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.alarms.create(ALARM_NAME, { periodInMinutes: 1 });
-  syncNow();
+  syncNow({ forceFull: true }); // startup is authoritative: always reconcile from a full snapshot
 });
 
 chrome.runtime.onStartup.addListener(() => {
   chrome.alarms.create(ALARM_NAME, { periodInMinutes: 1 });
-  syncNow();
+  syncNow({ forceFull: true });
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
@@ -46,15 +46,15 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   }
 });
 
-async function syncNow() {
+async function syncNow({ forceFull = false } = {}) {
   const stored = await chrome.storage.local.get(["etag", "ruleMap", "nextRuleId"]);
 
-  // If our stored rules predate the current schema, skip the ETag so this poll
-  // returns a full snapshot and the diff below can rebuild them.
+  // Skip the ETag (forcing a full snapshot) when startup demands it or when
+  // our stored rules predate the current schema and need rebuilding.
   const storedKeys = Object.keys(stored.ruleMap ?? {});
   const needsMigration = storedKeys.some((k) => !k.startsWith(`${RULE_SCHEMA}|`));
 
-  const headers = stored.etag && !needsMigration ? { "If-None-Match": stored.etag } : {};
+  const headers = stored.etag && !needsMigration && !forceFull ? { "If-None-Match": stored.etag } : {};
   let response;
   try {
     response = await fetch(`${SYNC_API}/blocked`, { headers });
