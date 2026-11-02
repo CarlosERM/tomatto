@@ -11,7 +11,7 @@
 const SYNC_API = "http://localhost:3002"; // change here if the Sync API runs elsewhere
 const ALARM_NAME = "tomatto-poll";
 
-console.log("[tomatto] worker v8 loaded");
+console.log("[tomatto] worker v9 loaded");
 
 // Debug aid for unpacked extensions (declarativeNetRequestFeedback permission):
 // logs EVERY request this extension's rules match. If a visit produces no
@@ -82,9 +82,9 @@ async function syncNow({ forceFull = false } = {}) {
   const addRules = (sites ?? []).map((site) => ({
     id: nextRuleId++,
     priority: 1,
-    // extensionPath must be absolute (leading "/") and the target must be
-    // listed in manifest web_accessible_resources.
-    action: { type: "redirect", redirect: { extensionPath: "/blocked.html" } },
+    // Absolute extension URL redirect — documented for dynamic rules and free
+    // of the extensionPath/WAR policy ambiguities we hit earlier.
+    action: { type: "redirect", redirect: { url: chrome.runtime.getURL("blocked.html") } },
     condition: ruleCondition(site),
   }));
 
@@ -94,6 +94,10 @@ async function syncNow({ forceFull = false } = {}) {
       addRules,
     });
     console.log(`[tomatto] v${version}: installed ${addRules.length} rules (${JSON.stringify(sites?.map((s) => s.domain))})`);
+    // Badge = proof-of-life in THIS browser instance: if the toolbar icon of
+    // the Chrome you browse with shows no number, that browser has no rules.
+    await chrome.action.setBadgeText({ text: String(addRules.length) });
+    await chrome.action.setBadgeBackgroundColor({ color: "#e04b3a" });
   } catch (err) {
     // Don't persist the etag for a snapshot we failed to apply — the next poll
     // re-fetches and retries instead of silently diverging.
