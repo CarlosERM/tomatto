@@ -6,7 +6,7 @@
 const SYNC_API = "http://localhost:3002"; // change here if the Sync API runs elsewhere
 const ALARM_NAME = "tomatto-poll";
 
-console.log("[tomatto] worker v3 loaded"); // version banner: distinguishes live code from stale console messages
+console.log("[tomatto] worker v4 loaded"); // version banner: distinguishes live code from stale console messages
 
 // Build the dNR condition for one site. Notes from the declarativeNetRequest docs:
 // - `domains` is deprecated (Chrome 101+) and matches the request INITIATOR, not
@@ -62,11 +62,13 @@ async function syncNow() {
   }
 
   const { version, sites } = await response.json();
-  const ruleMap = stored.ruleMap ?? {}; // key "domain|subs" -> dNR rule id
+  const ruleMap = stored.ruleMap ?? {}; // key "v4|domain|subs" -> dNR rule id
   let nextRuleId = stored.nextRuleId ?? 1;
 
+  // The 'v4' prefix is a condition-schema version: when the rule schema
+  // changes, old keys no longer match and every rule is cleanly reinstalled.
   const desired = new Map(
-    (sites ?? []).map((s) => [`${s.domain}|${s.include_subdomains ? 1 : 0}`, s])
+    (sites ?? []).map((s) => [`v4|${s.domain}|${s.include_subdomains ? 1 : 0}`, s])
   );
 
   // Remove rules that disappeared or changed their subdomain flag.
