@@ -6,7 +6,7 @@ A simplified [Cold-Turkey-style](https://wwwgetcoldturkey.com/) website blocker 
 
 O Tomatto bloqueia sites no navegador sem interface: você cadastra domínios na **Manager API** (`:3001`), que persiste em SQLite e envia um snapshot completo (com versão monotônica) para a **Sync API** (`:3002`) via HTTP — integração REST-to-REST real, com fila de pendências (`sync_status="pending"`) e retry quando a Sync está fora do ar. Uma extensão Chrome (MV3) faz polling da Sync API a cada minuto usando o handshake ETag/304 e aplica o bloqueio com `declarativeNetRequest`, redirecionando para uma página local.
 
-Os casos de teste de integração foram produzidos por **quatro tipos de prompt** (`prompts/`): contrato (a partir do spec OpenAPI), cenários ponta a ponta, casos adversariais entre serviços e geração de dados de teste. As transcrições brutas da LLM ficam em `generated-tests/` e os testes executáveis curados em `tests/integration/` (43 testes, todos marcados `integration`). O relato do exercício, em linguagem direta, está em [`docs/forum-post.md`](docs/forum-post.md).
+Os casos de teste de integração foram produzidos por **quatro tipos de prompt** (`prompts/`): contrato (a partir do spec OpenAPI), cenários ponta a ponta, casos adversariais entre serviços e geração de dados de teste. As transcrições brutas da LLM ficam em `generated-tests/` e os testes executáveis curados em `tests/integration/` (43 testes, todos marcados `integration`). O relato do exercício, em linguagem direta, está em [`docs/forum-post.md`](docs/forum-post.md) (há também uma [versão curta](docs/forum-post-short.md)).
 
 ## Architecture
 
