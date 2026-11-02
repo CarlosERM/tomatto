@@ -3,7 +3,7 @@
   "name": "Tomatto",
   "version": "1.0.0",
   "description": "Blocks the domains pushed by the Tomatto Sync API (coursework demo of REST-to-REST + browser integration).",
-  "permissions": ["alarms", "storage", "declarativeNetRequest"],
+  "permissions": ["alarms", "storage", "declarativeNetRequest", "declarativeNetRequestFeedback"],
   "host_permissions": [
     "http://localhost:3002/*",
     "http://127.0.0.1:3002/*"

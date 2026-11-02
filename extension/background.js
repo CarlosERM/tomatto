@@ -11,18 +11,24 @@
 const SYNC_API = "http://localhost:3002"; // change here if the Sync API runs elsewhere
 const ALARM_NAME = "tomatto-poll";
 
-console.log("[tomatto] worker v7 loaded");
+console.log("[tomatto] worker v8 loaded");
 
-// Build the dNR condition for one site. Notes from the declarativeNetRequest docs:
-// - `domains` is deprecated (Chrome 101+) and matches the request INITIATOR, not
-//   the target URL — address-bar navigations would never match it. `requestDomains`
-//   matches the request URL's host and implicitly includes all sub-domains.
-// - If neither resourceTypes nor excludedResourceTypes is given, main_frame is
-//   EXCLUDED — top-level navigation must be listed explicitly to block visits.
+// Debug aid for unpacked extensions (declarativeNetRequestFeedback permission):
+// logs EVERY request this extension's rules match. If a visit produces no
+// "matched" line, the rule never fired -> condition problem. If it fires but
+// the page still loads -> redirect application problem.
+chrome.declarativeNetRequest.onRuleMatchedDebug.addListener((info) => {
+  console.log("[tomatto] matched:", info.rule.ruleId, info.request.url);
+});
+
+// Build the dNR condition for one site using the canonical ad-blocker form:
+// urlFilter "||domain/" = domain anchor + path boundary (matches host and all
+// sub-domains; '||example.com/' does NOT match example.company).
+// resourceTypes must list main_frame explicitly or top-level visits are excluded.
 function ruleCondition(site) {
   const base = { resourceTypes: ["main_frame", "sub_frame"] };
   if (site.include_subdomains) {
-    return { ...base, requestDomains: [site.domain], urlFilter: "*" };
+    return { ...base, urlFilter: `||${site.domain}/` };
   }
   // Exact host only: anchor scheme + host boundary. regexFilter is matched
   // against the punycode host, which our domains already are.
